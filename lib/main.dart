@@ -56,7 +56,7 @@ class _ApplicationState extends State<Application>
   Future<void> _playAnimation() async {
     try {
       await _controller.forward().orCancel;
-      await _controller.reverse().orCancel;
+      // await _controller.reverse().orCancel;
     } on TickerCanceled {
       // The animation got canceled, probably because we were disposed.
     }
@@ -64,7 +64,7 @@ class _ApplicationState extends State<Application>
 
   @override
   Widget build(BuildContext context) {
-    timeDilation = 3.0; // 1.0 is normal animation speed.
+    timeDilation = 1.0; // 1.0 is normal animation speed.
     return Scaffold(
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -73,8 +73,8 @@ class _ApplicationState extends State<Application>
         },
         child: Center(
           child: Container(
-            width: 300,
-            height: 300,
+            width: 600,
+            height: 600,
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.1),
               border: Border.all(color: Colors.black.withOpacity(0.1)),
@@ -154,7 +154,7 @@ class StaggerAnimation extends StatelessWidget {
         curve: const Interval(0.0, 0.100, curve: Curves.ease),
       ),
     ),
-    width = Tween<double>(begin: 0.0, end: 250.0).animate(
+    width = Tween<double>(begin: 0.0, end: 480.0).animate(
       CurvedAnimation(
         parent: controller,
         curve: const Interval(0.125, 0.600, curve: Curves.fastEaseInToSlowEaseOut),
