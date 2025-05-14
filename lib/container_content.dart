@@ -3,8 +3,11 @@
 import 'package:flutter/material.dart';
 
 class ContainerContent extends StatelessWidget {
+  final double opacity;
+
   const ContainerContent({
     super.key,
+    required this.opacity,
   });
 
   @override
@@ -12,11 +15,14 @@ class ContainerContent extends StatelessWidget {
     return Container(
       color: Colors.red,
       width: double.infinity,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Flexible(child: Text("1234\n\n\n\n\n", softWrap: true, overflow: TextOverflow.ellipsis)),
-        ],
+      child: Opacity(
+        opacity: opacity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Flexible(child: Text("1234\n\n\n\n\n", softWrap: true, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
       ),
     );
   }

@@ -94,6 +94,7 @@ class _ApplicationState extends State<Application>
                           width: double.infinity,
                           child: ContainerContent(
                             key: _measureKey,
+                            opacity: 0.0,
                           )
                         ),
                       ),
@@ -102,7 +103,9 @@ class _ApplicationState extends State<Application>
                           controller: _controller.view,
                           // Widget that we want to appear above the app bar.
                           // Identical widget to the measured one.
-                          child: ContainerContent(),
+                          child: (opacity) => ContainerContent(
+                            opacity: opacity.value
+                          ),
                           targetHeight: _measuredChildHeight,
                         ),
                       ),
@@ -137,7 +140,7 @@ class StaggerAnimation extends StatelessWidget {
   final Animation<double> height;
   final Animation<Offset> transform;
 
-  final Widget child;
+  final Widget Function(Animation<double>) child;
 
   final double targetHeight;
 
@@ -151,7 +154,7 @@ class StaggerAnimation extends StatelessWidget {
     opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: controller,
-        curve: const Interval(0.0, 0.100, curve: Curves.ease),
+        curve: const Interval(0.125, 1.00, curve: Curves.ease),
       ),
     ),
     width = Tween<double>(begin: 0.0, end: 480.0).animate(
@@ -173,32 +176,26 @@ class StaggerAnimation extends StatelessWidget {
       ),
     );
 
-  Widget _buildAnimation(BuildContext context, Widget? child) {
-    return Transform.translate(
-      offset: transform.value,
-      child: Container(
-        alignment: Alignment.bottomCenter,
-        child: Opacity(
-          opacity: opacity.value,
-          child: Container(
-            width: width.value,
-            height: height.value,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: child
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      builder: _buildAnimation,
       animation: controller,
-      child: child,
+      builder: (context, _) {
+         return Transform.translate(
+          offset: transform.value,
+          child: Container(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              width: width.value,
+              height: height.value,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: child.call(opacity)
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
