@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:action_bar_animation/container_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 
@@ -19,6 +20,11 @@ class _ApplicationState extends State<Application>
     with TickerProviderStateMixin {
   late AnimationController _controller;
 
+  final GlobalKey _measureKey = GlobalKey();
+  // - 56 is the height of action bar
+  // - 16 * 2 is the total padding we want around Y axis. (16 for both top and bottom). This will allow us to Transform.translate the container below safe area.
+  double _measuredChildHeight = 56 + 16 * 2;
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +33,18 @@ class _ApplicationState extends State<Application>
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _measureKey.currentContext;
+      if (context != null) {
+        final size = context.size;
+        if (size != null) {
+          setState(() {
+            _measuredChildHeight = size.height + _measuredChildHeight; // padding
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -46,7 +64,7 @@ class _ApplicationState extends State<Application>
 
   @override
   Widget build(BuildContext context) {
-    timeDilation = 1.0; // 1.0 is normal animation speed.
+    timeDilation = 3.0; // 1.0 is normal animation speed.
     return Scaffold(
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -66,7 +84,30 @@ class _ApplicationState extends State<Application>
               child: Stack(
                 alignment: Alignment.bottomCenter,
                 children: [
-                  StaggerAnimation(controller: _controller.view),
+                  Column(
+                    children: [
+                      // Widget that we will measure.
+                      // Basically the same shit, but with assigned key for later acquiring the size of it.
+                      Offstage(
+                        offstage: true,
+                        child: Container(
+                          width: double.infinity,
+                          child: ContainerContent(
+                            key: _measureKey,
+                          )
+                        ),
+                      ),
+                      Expanded(
+                        child: StaggerAnimation(
+                          controller: _controller.view,
+                          // Widget that we want to appear above the app bar.
+                          // Identical widget to the measured one.
+                          child: ContainerContent(),
+                          targetHeight: _measuredChildHeight,
+                        ),
+                      ),
+                    ],
+                  ),
                   Container(
                     height: 54,
                     width: 175,
@@ -75,7 +116,6 @@ class _ApplicationState extends State<Application>
                       shape: StadiumBorder()
                     ),
                   ),
-                  
                 ]
               )
             ),
@@ -97,7 +137,17 @@ class StaggerAnimation extends StatelessWidget {
   final Animation<double> height;
   final Animation<Offset> transform;
 
-  StaggerAnimation({super.key, required this.controller}): 
+  final Widget child;
+
+  final double targetHeight;
+
+  StaggerAnimation({
+    super.key,
+    required this.controller,
+    required this.child,
+    required this.targetHeight,
+  }): 
+  
     opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: controller,
@@ -110,7 +160,7 @@ class StaggerAnimation extends StatelessWidget {
         curve: const Interval(0.125, 0.600, curve: Curves.fastEaseInToSlowEaseOut),
       ),
     ),
-    height = Tween<double>(begin: 0.0, end: 150.0).animate(
+    height = Tween<double>(begin: 0.0, end: targetHeight).animate(
       CurvedAnimation(
         parent: controller,
         curve: const Interval(0.125, 0.500, curve: Curves.easeOutQuad),
@@ -119,7 +169,7 @@ class StaggerAnimation extends StatelessWidget {
     transform = Tween<Offset>(begin: const Offset(0.0, 0.0), end: const Offset(0.0, 16.0)).animate(
       CurvedAnimation(
         parent: controller,
-        curve: const Interval(0.125, 0.500, curve: Curves.ease),
+        curve: const Interval(0.125, 0.500, curve: Curves.fastOutSlowIn),
       ),
     );
 
@@ -133,9 +183,9 @@ class StaggerAnimation extends StatelessWidget {
           child: Container(
             width: width.value,
             height: height.value,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.indigo[300]!, width: 3),
-              borderRadius: BorderRadius.circular(16)
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: child
             ),
           ),
         ),
@@ -145,6 +195,10 @@ class StaggerAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(builder: _buildAnimation, animation: controller);
+    return AnimatedBuilder(
+      builder: _buildAnimation,
+      animation: controller,
+      child: child,
+    );
   }
 }
